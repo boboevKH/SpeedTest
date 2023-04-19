@@ -20,7 +20,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     lateinit var webView: WebView
-    private val list: MutableList<Message> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,7 +41,6 @@ class MainActivity : AppCompatActivity() {
 
         binding.button.setOnClickListener {
 
-            list.clear()
             webView.loadUrl("https://fast.com")
             webView.webChromeClient = object : WebChromeClient() {
             }
@@ -77,13 +75,16 @@ class MainActivity : AppCompatActivity() {
                 val uploadUnits = data.getString("uploadUnits")
                 val userIp = data.getString("userIp")
 
-                list.add(Message(userIp,"$speedValue $speedUnits","Download"))
-                list.add(Message(userIp,"$uploadValue $uploadUnits","Upload"))
-                list.add(Message(userIp,"$bufferbloatValue $bufferbloatUnits","$bufferbloatLabel latency"))
-                list.add(Message(userIp,"$latencyValue $latencyUnits","$latencyLabel latency"))
 
-//                Log.d("JSONDATA",data.toString())
-                Log.d("JSONDATAlist",list.toString())
+                val message = Message(
+                    "$speedValue $speedUnits",
+                    "$uploadValue $uploadUnits",
+                    "$bufferbloatValue $bufferbloatUnits",
+                    "$latencyValue $latencyUnits"
+                )
+
+                Log.d("JSONDATA",data.toString())
+                Log.d("JSONDATAlist",message.toString())
 
 
                 val interceptor = HttpLoggingInterceptor()
@@ -102,26 +103,7 @@ class MainActivity : AppCompatActivity() {
                     .build()
 
                 val service = retrofit.create(Service::class.java)
-
-                list.forEach {
-                    val call = service.sendData(
-                        it.clientIP,
-                        it.speedOrLatency,
-                        it.type
-                    )
-
-                    call.enqueue(object : Callback<Message> {
-                        override fun onResponse(call: Call<Message>, response: Response<Message>) {
-//                            Успешно
-                            Toast.makeText(this@MainActivity, ""+response.code(),Toast.LENGTH_SHORT).show()
-                        }
-
-                        override fun onFailure(call: Call<Message>, t: Throwable) {
-                            // Ошибка
-                            Log.e("RETROFIT",t.message.toString())
-                        }
-                    })
-                }
+                service.sendData(message)
 
             }
         }, 50000)
