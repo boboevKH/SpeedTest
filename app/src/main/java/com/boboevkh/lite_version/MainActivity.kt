@@ -75,6 +75,12 @@ class MainActivity : AppCompatActivity() {
                 val uploadUnits = data.getString("uploadUnits")
                 val userIp = data.getString("userIp")
 
+                val request = JSONObject()
+                request.put("download_speed","$speedValue $speedUnits")
+                request.put("upload_speed", "$uploadValue $uploadUnits")
+                request.put("loaded_latency","$bufferbloatValue $bufferbloatUnits")
+                request.put("unloaded_latency", "$latencyValue $latencyUnits")
+
 
                 val message = Message(
                     "$speedValue $speedUnits",
@@ -82,13 +88,15 @@ class MainActivity : AppCompatActivity() {
                     "$bufferbloatValue $bufferbloatUnits",
                     "$latencyValue $latencyUnits"
                 )
+//                val gson = Gson()
+//                val json = gson.toJson(message)
 
                 Log.d("JSONDATA",data.toString())
                 Log.d("JSONDATAlist",message.toString())
 
 
                 val interceptor = HttpLoggingInterceptor()
-                interceptor.setLevel(HttpLoggingInterceptor.Level.BODY)
+                interceptor.level = HttpLoggingInterceptor.Level.BODY
 
                 val okHttpClient = OkHttpClient.Builder()
                     .addInterceptor(interceptor)
@@ -103,7 +111,16 @@ class MainActivity : AppCompatActivity() {
                     .build()
 
                 val service = retrofit.create(Service::class.java)
-                service.sendData(message)
+                service.sendData(request).enqueue(object : Callback<Void> {
+                    override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                        Toast.makeText(this@MainActivity, ""+response.code(),Toast.LENGTH_SHORT).show()
+                    }
+
+                    override fun onFailure(call: Call<Void>, t: Throwable) {
+
+                    }
+                })
+                Log.d("JSONDATA", request.toString())
 
             }
         }, 50000)
