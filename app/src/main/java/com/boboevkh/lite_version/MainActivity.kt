@@ -61,8 +61,10 @@ class MainActivity : AppCompatActivity() {
             override fun run() {
                 webView.evaluateJavascript(js) { result ->
                     val isSucceeded = result == "true"
+
                     if (isSucceeded) {
 
+//                        ***   Получаем данные +++
                         webView.evaluateJavascript(
                             "(function() { return { userIp: document.getElementById('user-ip').textContent, speedValue: document.getElementById('speed-value').textContent, speedUnits: document.getElementById('speed-units').textContent, latencyLabel: document.getElementById('latency-label').textContent, latencyValue: document.getElementById('latency-value').textContent, latencyUnits: document.getElementById('latency-units').textContent, bufferbloatLabel: document.getElementById('bufferbloat-label').textContent, bufferbloatValue: document.getElementById('bufferbloat-value').textContent, bufferbloatUnits: document.getElementById('bufferbloat-units').textContent, uploadValue: document.getElementById('upload-value').textContent, uploadUnits: document.getElementById('upload-units').textContent } })();"
                         ) { result ->
@@ -75,6 +77,7 @@ class MainActivity : AppCompatActivity() {
                             val bufferbloatUnits = data.getString("bufferbloatUnits")
                             val uploadValue = data.getString("uploadValue")
                             val uploadUnits = data.getString("uploadUnits")
+//                        ***   Получаем данные ---
 
                             val request = JSONObject()
                             request.put("download_speed","$speedValue $speedUnits")
@@ -109,10 +112,19 @@ class MainActivity : AppCompatActivity() {
                             })
                             Log.d("JSONDATA", request.toString())
 
+                            binding.apply {
+                                button.isEnabled = true
+                                button.text = "Тест"
+                            }
+
                         }
 
                     } else {
                         handler.postDelayed(this, 1)
+                        binding.apply {
+                            button.isEnabled = false
+                            button.text = "..."
+                        }
                     }
                 }
             }
