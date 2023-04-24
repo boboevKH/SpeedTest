@@ -44,91 +44,81 @@ class MainActivity : AppCompatActivity() {
             webView.loadUrl("https://fast.com")
             webView.webChromeClient = object : WebChromeClient() {
             }
-            testing(webView)
+//            testing(webView)
+            second(webView)
         }
 
     }
 
 
-    private fun testing(webView: WebView) {
+    private fun second(webView: WebView){
 
-        Handler().postDelayed({
-            binding.button.apply {
-                isEnabled = true
-                text = "Тест"
+        val js =
+            "(function() {return document.querySelector('.extra-details-container.align-container').className.includes('succeeded');})();"
+        val handler = Handler()
 
-            }
+        val runnable = object : Runnable {
+            override fun run() {
+                webView.evaluateJavascript(js) { result ->
+                    val isSucceeded = result == "true"
+                    if (isSucceeded) {
 
-            webView.evaluateJavascript(
-                "(function() { return { userIp: document.getElementById('user-ip').textContent, speedValue: document.getElementById('speed-value').textContent, speedUnits: document.getElementById('speed-units').textContent, latencyLabel: document.getElementById('latency-label').textContent, latencyValue: document.getElementById('latency-value').textContent, latencyUnits: document.getElementById('latency-units').textContent, bufferbloatLabel: document.getElementById('bufferbloat-label').textContent, bufferbloatValue: document.getElementById('bufferbloat-value').textContent, bufferbloatUnits: document.getElementById('bufferbloat-units').textContent, uploadValue: document.getElementById('upload-value').textContent, uploadUnits: document.getElementById('upload-units').textContent } })();"
-            ) { result ->
-                val data = JSONObject(result)
-                val speedValue = data.getString("speedValue")
-                val speedUnits = data.getString("speedUnits")
-                val latencyLabel = data.getString("latencyLabel")
-                val latencyValue = data.getString("latencyValue")
-                val latencyUnits = data.getString("latencyUnits")
-                val bufferbloatLabel = data.getString("bufferbloatLabel")
-                val bufferbloatValue = data.getString("bufferbloatValue")
-                val bufferbloatUnits = data.getString("bufferbloatUnits")
-                val uploadValue = data.getString("uploadValue")
-                val uploadUnits = data.getString("uploadUnits")
-                val userIp = data.getString("userIp")
+                        webView.evaluateJavascript(
+                            "(function() { return { userIp: document.getElementById('user-ip').textContent, speedValue: document.getElementById('speed-value').textContent, speedUnits: document.getElementById('speed-units').textContent, latencyLabel: document.getElementById('latency-label').textContent, latencyValue: document.getElementById('latency-value').textContent, latencyUnits: document.getElementById('latency-units').textContent, bufferbloatLabel: document.getElementById('bufferbloat-label').textContent, bufferbloatValue: document.getElementById('bufferbloat-value').textContent, bufferbloatUnits: document.getElementById('bufferbloat-units').textContent, uploadValue: document.getElementById('upload-value').textContent, uploadUnits: document.getElementById('upload-units').textContent } })();"
+                        ) { result ->
+                            val data = JSONObject(result)
+                            val speedValue = data.getString("speedValue")
+                            val speedUnits = data.getString("speedUnits")
+                            val latencyValue = data.getString("latencyValue")
+                            val latencyUnits = data.getString("latencyUnits")
+                            val bufferbloatValue = data.getString("bufferbloatValue")
+                            val bufferbloatUnits = data.getString("bufferbloatUnits")
+                            val uploadValue = data.getString("uploadValue")
+                            val uploadUnits = data.getString("uploadUnits")
 
-                val request = JSONObject()
-                request.put("download_speed","$speedValue $speedUnits")
-                request.put("upload_speed", "$uploadValue $uploadUnits")
-                request.put("loaded_latency","$bufferbloatValue $bufferbloatUnits")
-                request.put("unloaded_latency", "$latencyValue $latencyUnits")
+                            val request = JSONObject()
+                            request.put("download_speed","$speedValue $speedUnits")
+                            request.put("upload_speed", "$uploadValue $uploadUnits")
+                            request.put("loaded_latency","$bufferbloatValue $bufferbloatUnits")
+                            request.put("unloaded_latency", "$latencyValue $latencyUnits")
 
+                            val interceptor = HttpLoggingInterceptor()
+                            interceptor.level = HttpLoggingInterceptor.Level.BODY
 
-                val message = Message(
-                    "$speedValue $speedUnits",
-                    "$uploadValue $uploadUnits",
-                    "$bufferbloatValue $bufferbloatUnits",
-                    "$latencyValue $latencyUnits"
-                )
-//                val gson = Gson()
-//                val json = gson.toJson(message)
-
-                Log.d("JSONDATA",data.toString())
-                Log.d("JSONDATAlist",message.toString())
+                            val okHttpClient = OkHttpClient.Builder()
+                                .addInterceptor(interceptor)
+                                .build()
 
 
-                val interceptor = HttpLoggingInterceptor()
-                interceptor.level = HttpLoggingInterceptor.Level.BODY
+                            // POST-запрос с использованием Retrofit2
+                            val retrofit = Retrofit.Builder()
+                                .baseUrl("https://api-life3.megafon.tj")
+                                .addConverterFactory(GsonConverterFactory.create())
+                                .client(okHttpClient)
+                                .build()
 
-                val okHttpClient = OkHttpClient.Builder()
-                    .addInterceptor(interceptor)
-                    .build()
+                            val service = retrofit.create(Service::class.java)
+                            service.sendData(request).enqueue(object : Callback<Void> {
+                                override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                                    Toast.makeText(this@MainActivity, ""+response.code(),Toast.LENGTH_SHORT).show()
+                                }
 
+                                override fun onFailure(call: Call<Void>, t: Throwable) {
 
-                // POST-запрос с использованием Retrofit2
-                val retrofit = Retrofit.Builder()
-                    .baseUrl("https://api-life3.megafon.tj")
-                    .addConverterFactory(GsonConverterFactory.create())
-                    .client(okHttpClient)
-                    .build()
+                                }
+                            })
+                            Log.d("JSONDATA", request.toString())
 
-                val service = retrofit.create(Service::class.java)
-                service.sendData(request).enqueue(object : Callback<Void> {
-                    override fun onResponse(call: Call<Void>, response: Response<Void>) {
-                        Toast.makeText(this@MainActivity, ""+response.code(),Toast.LENGTH_SHORT).show()
+                        }
+
+                    } else {
+                        handler.postDelayed(this, 1)
                     }
-
-                    override fun onFailure(call: Call<Void>, t: Throwable) {
-
-                    }
-                })
-                Log.d("JSONDATA", request.toString())
-
+                }
             }
-        }, 50000)
-
-        binding.button.apply {
-            isEnabled = false
-            text = "..."
         }
+        handler.postDelayed(runnable, 1)
+
     }
 
 }
